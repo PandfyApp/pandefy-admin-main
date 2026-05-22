@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader } from '../components/ui/card'
 import Input from '../components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
-import { hasPermission } from '../lib/auth'
+import { canAccessAdminFeature } from '../lib/auth'
 import { DateRangePreset, DateRangeValue, resolveDateRange } from '../lib/dateRanges'
 
 const money = (value?: string | number) => `TZS ${Number(value || 0).toLocaleString()}`
@@ -40,7 +40,7 @@ const sponsorLabel = (row: SupportSponsorship | PendingSponsorship) => {
 export default function Sponsors() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const canReadAnalytics = hasPermission('SUPPORT_ANALYTICS_READ')
+  const canReadAnalytics = canAccessAdminFeature()
   const tab = searchParams.get('tab') === 'pending' ? 'pending' : 'completed'
   const [completed, setCompleted] = useState<SupportSponsorship[]>([])
   const [pending, setPending] = useState<PendingSponsorship[]>([])

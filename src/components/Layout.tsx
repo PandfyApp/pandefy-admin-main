@@ -2,7 +2,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import Button from './ui/button'
-import { hasPermission } from '../lib/auth'
+import { canAccessAdminFeature, hasPermission } from '../lib/auth'
 
 export default function Layout() {
   const navigate = useNavigate()
@@ -30,7 +30,7 @@ export default function Layout() {
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
   const canSeeDashboard = hasPermission('DASHBOARD_READ')
-  const canSeeSupport = hasPermission('SUPPORT_READ')
+  const canSeeSupport = canAccessAdminFeature()
   const canSeeWithdrawals = hasPermission('WITHDRAWAL_READ')
   const canSeeBusiness = hasPermission('BUSINESS_READ')
   const canSeeUsers = hasPermission('USER_READ')
@@ -39,11 +39,11 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
-      <aside className="w-64 bg-card border-r border-border">
-        <div className="h-16 flex items-center px-4 border-b border-border">
+      <aside className="flex w-64 flex-col border-r border-border bg-card">
+        <div className="flex h-16 shrink-0 items-center border-b border-border px-4">
           <Link to="/" className="font-bold">Pandefy Admin</Link>
         </div>
-        <nav className="p-4 space-y-2">
+        <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
           {canSeeDashboard && <NavLink to="/" end className={({ isActive }) => `block px-3 py-2 rounded ${isActive ? 'bg-muted text-foreground' : 'text-foreground/80 hover:bg-muted'}`}>Home</NavLink>}
           {canSeeSupport && <NavLink to="/requests" className={({ isActive }) => `block px-3 py-2 rounded ${isActive ? 'bg-muted text-foreground' : 'text-foreground/80 hover:bg-muted'}`}>Requests</NavLink>}
           {canSeeSupport && <NavLink to="/sponsors" className={({ isActive }) => `block px-3 py-2 rounded ${isActive ? 'bg-muted text-foreground' : 'text-foreground/80 hover:bg-muted'}`}>Supporters & Sponsors</NavLink>}

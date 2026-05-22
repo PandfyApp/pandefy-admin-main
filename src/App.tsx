@@ -12,7 +12,7 @@ import Settings from './pages/Settings'
 import BusinessProfiles from './pages/BusinessProfiles'
 import Users from './pages/Users'
 import Roles from './pages/Roles'
-import { hasAdminAccess, hasPermission } from './lib/auth'
+import { canAccessAdminFeature, hasAdminAccess, hasPermission } from './lib/auth'
 
 function isAdminToken(token: string | null) {
   if (!token) return false
@@ -41,6 +41,10 @@ function RequirePermission({ permission, children }: { permission: string; child
   return hasPermission(permission) ? children : <Forbidden />
 }
 
+function RequireAdminFeature({ children }: { children: JSX.Element }) {
+  return canAccessAdminFeature() ? children : <Forbidden />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -56,9 +60,9 @@ export default function App() {
         }
       >
         <Route index element={<RequirePermission permission="DASHBOARD_READ"><Home /></RequirePermission>} />
-        <Route path="requests" element={<RequirePermission permission="SUPPORT_READ"><Requests /></RequirePermission>} />
-        <Route path="requests/:id" element={<RequirePermission permission="SUPPORT_READ"><RequestDetails /></RequirePermission>} />
-        <Route path="sponsors" element={<RequirePermission permission="SUPPORT_READ"><Sponsors /></RequirePermission>} />
+        <Route path="requests" element={<RequireAdminFeature><Requests /></RequireAdminFeature>} />
+        <Route path="requests/:id" element={<RequireAdminFeature><RequestDetails /></RequireAdminFeature>} />
+        <Route path="sponsors" element={<RequireAdminFeature><Sponsors /></RequireAdminFeature>} />
         <Route path="withdrawals" element={<RequirePermission permission="WITHDRAWAL_READ"><Withdrawals /></RequirePermission>} />
         <Route path="business-profiles" element={<RequirePermission permission="BUSINESS_READ"><BusinessProfiles /></RequirePermission>} />
         <Route path="users" element={<RequirePermission permission="USER_READ"><Users /></RequirePermission>} />

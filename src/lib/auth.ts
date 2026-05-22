@@ -28,3 +28,16 @@ export function hasAdminAccess() {
     || hasRole('SUPER_ADMIN')
     || hasRole('ADMIN')
 }
+
+/** Any admin-portal feature that should not require per-feature RBAC setup */
+export function canAccessAdminFeature(optionalPermission?: string) {
+  if (!optionalPermission) {
+    return hasAdminAccess()
+  }
+  return hasAdminAccess() || hasPermission(optionalPermission)
+}
+
+/** @deprecated use canAccessAdminFeature */
+export function canViewSupport() {
+  return canAccessAdminFeature()
+}
