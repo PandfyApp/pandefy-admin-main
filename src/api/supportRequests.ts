@@ -6,6 +6,10 @@ export type SupportRequest = {
   initiatorPhoneNumber: string
   requestedAmount: string
   baseAmount: string
+  fundingTarget?: string
+  remainingFundingAmount?: string
+  offerRequestId?: number
+  offerState?: string
   sponsoredAmount: string
   status: string
   createdAt?: string
@@ -40,7 +44,7 @@ export type SupportRequestAnalytics = {
   statusTotals: { status: string; count: number; amount: string }[]
 }
 
-export async function listSupportRequests(params: { status?: string; createdFrom?: string; createdTo?: string; page?: number; size?: number }) {
+export async function listSupportRequests(params: { status?: string; initiatorPhoneNumber?: string; createdFrom?: string; createdTo?: string; page?: number; size?: number }) {
   const res = await api.get<Page<SupportRequest>>('/api/support-requests', { params })
   return res.data
 }
@@ -100,15 +104,23 @@ export async function manualConfirmSupportRequestPayment(id: number, payload: Ma
 export type SponsorSummary = { phone: string; amount: number }
 
 export async function listSupportRequestSponsors(id: number): Promise<SponsorSummary[]> {
-  try {
-    const res = await api.get<any[]>(`/api/support-requests/${id}/sponsors`)
-    return (Array.isArray(res.data) ? res.data : [])
-      .map((s) => ({
-        phone: s?.phoneNumber || s?.phone || s?.sponsorPhoneNumber,
-        amount: Number(s?.amount || 0),
-      }))
-      .filter((x) => !!x.phone)
-  } catch {
-    return []
+  const endpoints = [
+    `/api/support-requests/${id}/sponsors`,
+    `/api/support-requests/${id}/contributors`,
+    `/api/support-requests/${id}/supporters`,
+  ]
+  for (const ep of endpoints) {
+    try {
+      const res = await api.get<any>(ep)
+      const data = Array.isArray(res.data) ? res.data : []
+      const mapped = data
+        .map((s: any) => ({
+          phone: s?.phoneNumber || s?.phone || s?.sponsorPhoneNumber,
+          amount: Number(s?.amount || s?.contribution || s?.totalAmount || 0),
+        }))
+        .filter((x: any) => !!x.phone)
+      if (mapped.length > 0) return mapped
+    } catch {}
   }
+  return []
 }

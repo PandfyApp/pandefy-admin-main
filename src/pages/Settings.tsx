@@ -1,3 +1,4 @@
+import PaymentNetworks from '../components/settings/PaymentNetworks'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
 import Input from '../components/ui/input'
@@ -213,6 +214,7 @@ export default function Settings() {
   return (
     <div>
       <h1 className="text-xl font-semibold mb-4">Settings</h1>
+      <PaymentNetworks />
       <Card className="max-w-xl">
         <CardHeader>
           <div className="text-sm text-muted-foreground">Support Request Amount Limits</div>

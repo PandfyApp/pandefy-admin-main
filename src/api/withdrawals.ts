@@ -2,6 +2,9 @@ import { api, Page } from './client'
 
 export type Withdrawal = {
   id: number
+  requesterUserId?: number
+  requesterName?: string
+  requesterPhoneNumber?: string
   amount: string
   serviceFeePercent?: string
   serviceFeeAmount?: string

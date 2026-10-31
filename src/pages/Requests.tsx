@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getSupportRequestAnalytics, listSupportRequests, SupportRequest, SupportRequestAnalytics } from '../api/supportRequests'
 import DateRangeFilter from '../components/DateRangeFilter'
 import Badge from '../components/ui/badge'
+import Button from '../components/ui/button'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
@@ -26,7 +27,7 @@ const statusTone = (status: string) => {
 }
 
 const initialRange: DateRangeValue = { preset: 'THIS_MONTH' }
-const allowedPresets: DateRangePreset[] = ['TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH', 'LAST_MONTH', 'CUSTOM']
+const allowedPresets: DateRangePreset[] = ['ALL_TIME', 'TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH', 'LAST_MONTH', 'CUSTOM']
 
 const rangeFromSearch = (searchParams: URLSearchParams): DateRangeValue => {
   const presetParam = searchParams.get('preset')
@@ -41,33 +42,44 @@ const rangeFromSearch = (searchParams: URLSearchParams): DateRangeValue => {
 export default function Requests() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const canReadAnalytics = hasPermission('SUPPORT_ANALYTICS_READ')
+  const requesterPhone = searchParams.get('initiatorPhoneNumber') || ''
+  const canReadAnalytics = hasPermission('SUPPORT_ANALYTICS_READ') && !requesterPhone
   const [items, setItems] = useState<SupportRequest[]>([])
   const [analytics, setAnalytics] = useState<SupportRequestAnalytics | null>(null)
   const [status, setStatus] = useState<string>(searchParams.get('status') || 'ALL')
   const [range, setRange] = useState<DateRangeValue>(() => rangeFromSearch(searchParams))
   const [loading, setLoading] = useState(true)
   const [analyticsLoading, setAnalyticsLoading] = useState(true)
+  const [pageNumber, setPageNumber] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [error, setError] = useState('')
+  const loadVersion = useRef(0)
 
   const rangeParams = useMemo(() => resolveDateRange(range), [range])
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      try {
-        const page = await listSupportRequests({
-          status: status === 'ALL' ? undefined : status,
-          createdFrom: rangeParams.createdFrom,
-          createdTo: rangeParams.createdTo,
-          size: 100,
-        })
-        setItems([...page.content].sort((a, b) => b.id - a.id))
-      } finally {
-        setLoading(false)
-      }
+  const load = useCallback(async (pageNumber = 0, append = false) => {
+    const version = ++loadVersion.current
+    setLoading(true); setError('')
+    try {
+      const page = await listSupportRequests({
+        status: status === 'ALL' ? undefined : status,
+        initiatorPhoneNumber: requesterPhone || undefined,
+        createdFrom: rangeParams.createdFrom,
+        createdTo: rangeParams.createdTo,
+        page: pageNumber,
+        size: 100,
+      })
+      if (version !== loadVersion.current) return
+      setItems(old => append ? [...old, ...page.content] : page.content)
+      setPageNumber(pageNumber); setTotalPages(page.totalPages); setTotalElements(page.totalElements)
+    } catch {
+      if (version === loadVersion.current) setError('Unable to load requests. Please try again.')
+    } finally {
+      if (version === loadVersion.current) setLoading(false)
     }
-    load()
-  }, [status, rangeParams.createdFrom, rangeParams.createdTo])
+  }, [status, requesterPhone, rangeParams.createdFrom, rangeParams.createdTo])
+  useEffect(() => { load(); return () => { loadVersion.current++ } }, [load])
 
   useEffect(() => {
     if (!canReadAnalytics) {
@@ -124,6 +136,11 @@ export default function Requests() {
         </CardHeader>
       </Card>
 
+      {requesterPhone && <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4">
+        <p>Requests by <strong>{requesterPhone}</strong></p>
+        <Link className="text-primary underline" to="/requests">View all users’ requests</Link>
+      </div>}
+      {error && <div role="alert" className="rounded border border-red-500 p-3">{error} <Button variant="outline" onClick={() => load()}>Retry</Button></div>}
       {canReadAnalytics && (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -179,7 +196,7 @@ export default function Requests() {
               <div className="text-lg font-medium">Request Queue</div>
               <div className="text-sm text-muted-foreground">Every row below reflects the selected time range.</div>
             </div>
-            <Badge>{items.length} rows</Badge>
+            <Badge>{items.length} of {totalElements} requests</Badge>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -221,6 +238,7 @@ export default function Requests() {
               </TableBody>
             </Table>
           </div>
+          {pageNumber + 1 < totalPages && <div className="p-4"><Button variant="outline" disabled={loading} onClick={() => load(pageNumber + 1, true)}>{loading ? 'Loading…' : 'Load more requests'}</Button></div>}
         </CardContent>
       </Card>
     </div>

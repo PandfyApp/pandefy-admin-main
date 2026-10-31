@@ -153,3 +153,15 @@ export async function setBusinessSupportMaxAmount(value: number): Promise<number
   }
   return value
 }
+
+export type PaymentNetwork = { method: string; label: string; maintenance: boolean; message: string; updatedAt: string | null }
+export type AdminPaymentNetwork = { network: PaymentNetwork; updatedBy: string | null }
+export async function getPaymentNetworks(): Promise<PaymentNetwork[]> {
+  return (await api.get('/api/config/payment-networks')).data
+}
+export async function getAdminPaymentNetworks(): Promise<AdminPaymentNetwork[]> {
+  return (await api.get('/api/config/payment-networks/admin')).data
+}
+export async function setPaymentNetwork(method: string, maintenance: boolean, message: string): Promise<AdminPaymentNetwork> {
+  return (await api.put(`/api/config/payment-networks/${method}`, { maintenance, message })).data
+}

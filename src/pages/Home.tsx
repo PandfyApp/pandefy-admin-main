@@ -6,7 +6,7 @@ import { listWithdrawals } from '../api/withdrawals'
 import DateRangeFilter from '../components/DateRangeFilter'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
 import { Activity, ArrowRight, Users, Wallet } from 'lucide-react'
-import { canAccessAdminFeature, hasPermission } from '../lib/auth'
+import { hasPermission } from '../lib/auth'
 import { DateRangeValue, presetLabel, resolveDateRange } from '../lib/dateRanges'
 
 type Stat = {
@@ -35,7 +35,7 @@ const iconByKind = {
 
 export default function Home() {
   const navigate = useNavigate()
-  const canReadSupport = canAccessAdminFeature()
+  const canReadSupport = hasPermission('SUPPORT_READ')
   const canReadWithdrawals = hasPermission('WITHDRAWAL_READ')
   const canReadUsers = hasPermission('USER_READ')
   const [range, setRange] = useState<DateRangeValue>(initialRange)
@@ -167,31 +167,6 @@ export default function Home() {
           </div>
         </CardHeader>
       </Card>
-
-      {canReadSupport && (
-        <Card>
-          <CardHeader>
-            <div className="text-lg font-medium">Support</div>
-            <div className="text-sm text-muted-foreground">Open support queues and sponsor activity.</div>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              className="rounded-md border border-border bg-muted/30 px-4 py-2 text-sm hover:bg-muted"
-              onClick={() => navigate('/requests')}
-            >
-              Support Requests
-            </button>
-            <button
-              type="button"
-              className="rounded-md border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm hover:bg-violet-500/20"
-              onClick={() => navigate('/sponsors')}
-            >
-              Supporters & Sponsors
-            </button>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="text-sm text-muted-foreground">Showing request and withdrawal data for {presetLabel(range.preset)}.</div>

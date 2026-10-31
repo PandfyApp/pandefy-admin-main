@@ -1,4 +1,5 @@
 export type DateRangePreset =
+  | 'ALL_TIME'
   | 'TODAY'
   | 'YESTERDAY'
   | 'THIS_WEEK'
@@ -37,6 +38,7 @@ const endOfMonth = (value: Date) => new Date(value.getFullYear(), value.getMonth
 
 export const presetLabel = (preset: DateRangePreset) => {
   switch (preset) {
+    case 'ALL_TIME': return 'All Time'
     case 'TODAY': return 'Today'
     case 'YESTERDAY': return 'Yesterday'
     case 'THIS_WEEK': return 'This Week'
@@ -47,6 +49,7 @@ export const presetLabel = (preset: DateRangePreset) => {
 }
 
 export const resolveDateRange = (range: DateRangeValue) => {
+  if (range.preset === 'ALL_TIME') return { createdFrom: undefined, createdTo: undefined }
   const now = new Date()
   if (range.preset === 'CUSTOM') {
     return {

@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select'
 import Input from './ui/input'
 
 const options: { value: DateRangePreset; label: string }[] = [
+  { value: 'ALL_TIME', label: 'All Time' },
   { value: 'TODAY', label: 'Today' },
   { value: 'YESTERDAY', label: 'Yesterday' },
   { value: 'THIS_WEEK', label: 'This Week' },

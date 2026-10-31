@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { disburseAirtel, disburseTigo, getWithdrawalAnalytics, listWithdrawals, updateWithdrawalStatus, Withdrawal, WithdrawalAnalytics } from '../api/withdrawals'
 import DateRangeFilter from '../components/DateRangeFilter'
 import Badge from '../components/ui/badge'
@@ -14,7 +14,7 @@ import { DateRangePreset, DateRangeValue, resolveDateRange } from '../lib/dateRa
 
 const money = (value?: string | number) => `TZS ${Number(value || 0).toLocaleString()}`
 const initialRange: DateRangeValue = { preset: 'THIS_MONTH' }
-const allowedPresets: DateRangePreset[] = ['TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH', 'LAST_MONTH', 'CUSTOM']
+const allowedPresets: DateRangePreset[] = ['ALL_TIME', 'TODAY', 'YESTERDAY', 'THIS_WEEK', 'THIS_MONTH', 'LAST_MONTH', 'CUSTOM']
 
 const looksLikeTigoSuccessMessage = (value?: unknown) => {
   if (!value) return false
@@ -48,6 +48,15 @@ const rangeFromSearch = (searchParams: URLSearchParams): DateRangeValue => {
     from: searchParams.get('from') || undefined,
     to: searchParams.get('to') || undefined,
   }
+}
+
+function RequesterDetails({ withdrawal }: { withdrawal: Withdrawal }) {
+  const phone = withdrawal.requesterPhoneNumber
+  return <div className="space-y-1">
+    <div className="font-medium">{withdrawal.requesterName?.trim() || phone || 'Name not provided'}</div>
+    <div className="text-xs text-muted-foreground">Registered phone: {phone || 'Not available'}</div>
+    {phone && hasPermission('SUPPORT_READ') && <Link className="inline-block text-sm text-primary underline" to={`/requests?${new URLSearchParams({ initiatorPhoneNumber: phone, preset: 'ALL_TIME' })}`}>View all requests</Link>}
+  </div>
 }
 
 export default function Withdrawals() {
@@ -345,7 +354,7 @@ export default function Withdrawals() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-hidden rounded-b-lg">
+          <div className="overflow-x-auto rounded-b-lg">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -354,7 +363,8 @@ export default function Withdrawals() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Fee</TableHead>
                   <TableHead>Net</TableHead>
-                  <TableHead>Phone</TableHead>
+                  <TableHead>Requester</TableHead>
+                  <TableHead>Withdrawal Phone</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead>Approver</TableHead>
                   <TableHead>Status</TableHead>
@@ -363,9 +373,9 @@ export default function Withdrawals() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={10}>Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11}>Loading…</TableCell></TableRow>
                 ) : items.length === 0 ? (
-                  <TableRow><TableCell colSpan={10}>No withdrawals found for this range</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11}>No withdrawals found for this range</TableCell></TableRow>
                 ) : (
                   items.map((it) => (
                     <TableRow key={it.id}>
@@ -374,6 +384,7 @@ export default function Withdrawals() {
                       <TableCell>{money(it.amount)}</TableCell>
                       <TableCell>{money(it.serviceFeeAmount)}</TableCell>
                       <TableCell>{money(it.disbursementAmount ?? it.amount)}</TableCell>
+                      <TableCell><RequesterDetails withdrawal={it} /></TableCell>
                       <TableCell>{it.phoneNumber}</TableCell>
                       <TableCell>{it.paymentMethod}</TableCell>
                       <TableCell>
@@ -403,10 +414,14 @@ export default function Withdrawals() {
         isOpen={!!selectedWithdrawal}
         onClose={closeModal}
         title={`Withdrawal #${selectedWithdrawal?.id}`}
-        className="max-w-md"
+        className="max-w-lg max-h-[90vh] overflow-y-auto"
       >
         {selectedWithdrawal && (
           <div className="space-y-4">
+            <section aria-label="Requester details" className="rounded-lg border border-border p-3">
+              <p className="mb-2 text-xs uppercase text-muted-foreground">Requester</p>
+              <RequesterDetails withdrawal={selectedWithdrawal} />
+            </section>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Requested Amount</p>
@@ -417,7 +432,7 @@ export default function Withdrawals() {
                 <p className="font-medium">{money(selectedWithdrawal.disbursementAmount ?? selectedWithdrawal.amount)}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Phone Number</p>
+                <p className="text-muted-foreground">Withdrawal Phone Number</p>
                 <p className="font-medium">{selectedWithdrawal.phoneNumber}</p>
               </div>
               <div>

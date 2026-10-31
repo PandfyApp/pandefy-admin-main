@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { deleteSupportRequestComment, getSupportRequest, listSupportRequestComments, listSupportRequestPayments, listSupportRequestSponsors, manualConfirmSupportRequestPayment, SupportRequest, SupportRequestComment, SupportRequestPayment } from '../api/supportRequests'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
@@ -231,6 +231,13 @@ export default function RequestDetails() {
                 <div className="text-sm text-muted-foreground">Requested Amount</div>
                 <div className="text-sm">{item ? `TZS ${item.requestedAmount}` : '—'}</div>
               </div>
+              {item?.fundingTarget != null && <div className="space-y-1"><div className="text-sm text-muted-foreground">Remaining to fund</div><div className="text-sm">TZS {item.remainingFundingAmount} / goal TZS {item.fundingTarget}</div></div>}
+              {item?.offerRequestId && <section aria-label="Offer payment" className="col-span-full rounded-lg border border-border p-4 space-y-2">
+                <strong>Offer payment · {item.offerState}</strong>
+                <p>One payment supports another request and counts as this request’s base amount.</p>
+                <Link className="text-primary underline" to={`/requests/${item.offerRequestId}`}>View supported request</Link>
+                {item.offerState === 'REVIEW' && <p className="text-amber-600">Verify the operator transaction before manually confirming the base payment. A mismatch must be reconciled; no duplicate charge should be sent.</p>}
+              </section>}
               <div className="space-y-1">
                 <div className="text-sm text-muted-foreground">Sponsored Amount</div>
                 <div className="text-sm">{item ? `TZS ${item.sponsoredAmount}` : '—'}</div>
